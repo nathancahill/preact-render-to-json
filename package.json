@@ -1,7 +1,7 @@
 {
   "name": "preact-render-to-json",
   "amdName": "preactRenderToJSON",
-  "version": "3.6.4",
+  "version": "3.6.5",
   "description": "Render JSX and Preact components to JSON",
   "main": "dist/index.js",
   "jsnext:main": "src/index.js",
