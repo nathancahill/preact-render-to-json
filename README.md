@@ -1,5 +1,6 @@
 # preact-render-to-json
 
+[![npm](https://img.shields.io/npm/v/preact-render-to-json.svg)](https://www.npmjs.com/package/preact-render-to-json)
 [![CircleCI](https://img.shields.io/circleci/project/github/nathancahill/preact-render-to-json.svg)](https://circleci.com/gh/nathancahill/preact-render-to-json)
 
 Render JSX and [Preact] components to JSON. Useful for [Jest Snapshot testing].
