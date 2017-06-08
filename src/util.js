@@ -1,15 +1,4 @@
 
-const ESC = {
-	'<': '&lt;',
-	'>': '&gt;',
-	'"': '&quot;',
-	'&': '&amp;'
-};
-
-export let encodeEntities = s => String(s).replace(/[<>"&]/g, escapeChar);
-
-let escapeChar = a => ESC[a] || a;
-
 export let falsey = v => v==null || v===false;
 
 export function assign(obj, props) {

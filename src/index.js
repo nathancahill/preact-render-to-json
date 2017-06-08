@@ -1,4 +1,4 @@
-import { encodeEntities, falsey, assign, getNodeProps } from './util';
+import { falsey, assign, getNodeProps } from './util';
 
 const SHALLOW = { shallow: true };
 
@@ -42,7 +42,7 @@ export default function renderToJSON(vnode, context, opts, inner) {
 
 	// #text nodes
 	if (!nodeName) {
-		return encodeEntities(vnode);
+		return vnode;
 	}
 
 	// components
