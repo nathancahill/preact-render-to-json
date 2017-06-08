@@ -1,14 +1,13 @@
 {
-  "name": "preact-render-to-string",
-  "amdName": "preactRenderToString",
+  "name": "preact-render-to-json",
+  "amdName": "preactRenderToJSON",
   "version": "3.6.3",
-  "description": "Render JSX to an HTML string, with support for Preact components.",
+  "description": "Render JSX and Preact components to JSON",
   "main": "dist/index.js",
   "jsnext:main": "src/index.js",
   "scripts": {
-    "build": "npm run -s transpile && npm run -s transpile:jsx",
+    "build": "npm run -s transpile",
     "transpile": "rollup -c rollup.config.js -m ${npm_package_main}.map -f umd -n $npm_package_amdName $npm_package_jsnext_main -o $npm_package_main",
-    "transpile:jsx": "ENTRY=jsx rollup -c rollup.config.js -m dist/jsx.js.map -f umd -n $npm_package_amdName src/jsx.js -o dist/jsx.js",
     "test": "eslint src test && mocha --compilers js:babel-register test/**/*.js",
     "prepublish": "npm run build",
     "release": "npm run build && git commit -am $npm_package_version && git tag $npm_package_version && git push && git push --tags && npm publish"
@@ -19,16 +18,16 @@
     "universal",
     "isomorphic"
   ],
-  "author": "Jason Miller <jason@developit.ca>",
+  "author": "Nathan Cahill <nathan@nathancahill.com>",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/developit/preact-render-to-string.git"
+    "url": "https://github.com/nathancahill/preact-render-to-json.git"
   },
   "bugs": {
-    "url": "https://github.com/developit/preact-render-to-string/issues"
+    "url": "https://github.com/nathancahill/preact-render-to-json/issues"
   },
-  "homepage": "https://github.com/developit/preact-render-to-string",
+  "homepage": "https://github.com/nathancahill/preact-render-to-json",
   "peerDependencies": {
     "preact": "*"
   },
@@ -54,8 +53,5 @@
     "rollup-plugin-node-resolve": "^2.0.0",
     "sinon": "^1.17.5",
     "sinon-chai": "^2.8.0"
-  },
-  "dependencies": {
-    "pretty-format": "^3.5.1"
   }
 }
