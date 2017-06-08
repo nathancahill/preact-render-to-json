@@ -1,4 +1,4 @@
-import { falsey, assign, getNodeProps } from './util';
+import { falsey, assign, getNodeProps, omit } from './util';
 
 const SHALLOW = { shallow: true };
 
@@ -94,7 +94,11 @@ export default function renderToJSON(vnode, context, opts, inner) {
 	};
 
 	if (attributes) {
-		ret.props = attributes;
+		ret.props = omit(attributes, ['key', 'children']);
+	}
+
+	if (attributes && attributes.key) {
+		ret.key = attributes.key;
 	}
 
 	if (pieces.length) {
