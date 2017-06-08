@@ -37,7 +37,7 @@ export default function renderToJSON(vnode, context, opts, inner) {
 	opts = opts || {};
 
 	if (vnode==null || vnode===false) {
-		return EMPTY;
+		return null;
 	}
 
 	// #text nodes
