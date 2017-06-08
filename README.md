@@ -1,5 +1,7 @@
 # preact-render-to-json
 
+[![CircleCI](https://img.shields.io/circleci/project/github/nathancahill/preact-render-to-json.svg)](https://circleci.com/gh/nathancahill/preact-render-to-json)
+
 Render JSX and [Preact] components to JSON. Useful for [Jest Snapshot testing].
 
 ### Usage with Jest
@@ -13,8 +15,8 @@ import render from 'preact-render-to-json'
 let component = <div class="foo">content</div>;
 
 test('component', () => {
-	const tree = render(component)
-	expect(tree).toMatchSnapshot()
+    const tree = render(component)
+    expect(tree).toMatchSnapshot()
 })
 ```
 
