@@ -94,7 +94,11 @@ export default function renderToJSON(vnode, context, opts, inner) {
 	};
 
 	if (attributes) {
-		ret.props = omit(attributes, ['key', 'children']);
+		ret.props = omit(attributes, ['key', 'children', 'className']);
+
+		if (attributes.className && !attributes.class) {
+			ret.props.class = attributes.className;
+		}
 	}
 
 	if (attributes && attributes.key) {
