@@ -6,12 +6,37 @@ export function assign(obj, props) {
 	return obj;
 }
 
-export function getNodeProps(vnode) {
-	let defaultProps = vnode.nodeName.defaultProps,
-		props = assign({}, defaultProps || vnode.attributes);
-	if (defaultProps) assign(props, vnode.attributes);
-	if (vnode.children) props.children = vnode.children;
-	return props;
+export function flatMap(array, callback) {
+	const result = [];
+
+	const length = array.length;
+	for (let index = 0; index < length; index++) {
+		const mapped = callback(array[index]);
+		if (Array.isArray(mapped)) {
+			result.push(...mapped);
+		} else {
+			result.push(mapped);
+		}
+	}
+
+	return result;
+}
+
+/**
+ * Get flattened children from the children prop
+ * @param {Array} accumulator
+ * @param {any} children A `props.children` opaque object.
+ * @returns {Array} accumulator
+ * @private
+ */
+export function getChildren(accumulator, children) {
+	if (Array.isArray(children)) {
+		children.reduce(getChildren, accumulator);
+	}
+	else if (children!=null && children!==false) {
+		accumulator.push(children);
+	}
+	return accumulator;
 }
 
 export const omit = (object, paths) =>

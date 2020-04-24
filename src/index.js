@@ -1,4 +1,5 @@
-import { falsey, assign, getNodeProps, omit } from './util';
+import { options, Fragment, createElement } from 'preact';
+import { falsey, flatMap, assign, getChildren, omit } from './util';
 
 const SHALLOW = { shallow: true };
 
@@ -6,6 +7,8 @@ const SHALLOW = { shallow: true };
 const UNNAMED = [];
 
 const EMPTY = {};
+
+const noop = () => {};
 
 
 /** Render Preact JSX + Components to an HTML string.
@@ -26,22 +29,29 @@ renderToJSON.render = renderToJSON;
  *	@param {VNode} vnode	JSX VNode to render.
  *	@param {Object} [context={}]	Optionally pass an initial context object through the render path.
  */
-let shallowRender = (vnode, context) => renderToJSON(vnode, context, SHALLOW);
+export let shallowRender = (vnode, context) => renderToJSON(vnode, context, SHALLOW);
+
+export const render = renderToJSON;
 
 
 /** The default export is an alias of `render()`. */
 export default function renderToJSON(vnode, context, opts, inner) {
-	let { nodeName, attributes, children } = vnode || EMPTY,
+	if (vnode==null || typeof vnode==='boolean') {
+		return null;
+	}
+
+	// wrap array nodes in Fragment
+	if (Array.isArray(vnode)) {
+		vnode = createElement(Fragment, null, vnode);
+	}
+
+	let { type: nodeName, props } = vnode || EMPTY,
 		isComponent = false;
 	context = context || {};
 	opts = opts || {};
 
-	if (vnode==null || vnode===false) {
-		return null;
-	}
-
 	// #text nodes
-	if (!nodeName) {
+	if (typeof vnode!=='object' && !nodeName) {
 		return vnode;
 	}
 
@@ -51,58 +61,98 @@ export default function renderToJSON(vnode, context, opts, inner) {
 		if (opts.shallow && (inner || opts.renderRootComponent===false)) {
 			nodeName = getComponentName(nodeName);
 		}
+		else if (nodeName===Fragment) {
+			let children = [];
+			getChildren(children, vnode.props.children);
+			return flatMap(children, child => renderToJSON(child, context, opts, true));
+		}
 		else {
-			let props = getNodeProps(vnode),
-				rendered;
+			let rendered;
+
+			let c = vnode.__c = {
+				__v: vnode,
+				context,
+				props: vnode.props,
+				// silently drop state updates
+				setState: noop,
+				forceUpdate: noop,
+				// hooks
+				__h: []
+			};
+
+			// options.render
+			if (options.__r) options.__r(vnode);
 
 			if (!nodeName.prototype || typeof nodeName.prototype.render!=='function') {
+				// Necessary for createContext api. Setting this property will pass
+				// the context value as `this.context` just for this component.
+				let cxType = nodeName.contextType;
+				let provider = cxType && context[cxType.__c];
+				let cctx = cxType != null ? (provider ? provider.props.value : cxType.__) : context;
+
 				// stateless functional components
-				rendered = nodeName(props, context);
+				rendered = nodeName.call(vnode.__c, props, cctx);
 			}
 			else {
 				// class-based components
-				let c = new nodeName(props, context);
-				// turn off stateful re-rendering:
-				c._disable = c.__x = true;
-				c.props = props;
-				c.context = context;
-				if (c.componentWillMount) c.componentWillMount();
-				rendered = c.render(c.props, c.state, c.context);
+				let cxType = nodeName.contextType;
+				let provider = cxType && context[cxType.__c];
+				let cctx = cxType != null ? (provider ? provider.props.value : cxType.__) : context;
 
-				if (c.getChildContext) {
-					context = assign(assign({}, context), c.getChildContext());
+				// c = new nodeName(props, context);
+				c = vnode.__c = new nodeName(props, cctx);
+				c.__v = vnode;
+				// turn off stateful re-rendering:
+				c._dirty = c.__d = true;
+				c.props = props;
+				if (c.state==null) c.state = {};
+
+				if (c._nextState==null && c.__s==null) {
+					c._nextState = c.__s = c.state;
 				}
+
+				c.context = cctx;
+				if (nodeName.getDerivedStateFromProps) c.state = assign(assign({}, c.state), nodeName.getDerivedStateFromProps(c.props, c.state));
+				else if (c.componentWillMount) c.componentWillMount();
+
+				// If the user called setState in cWM we need to flush pending,
+				// state updates. This is the same behaviour in React.
+				c.state = c._nextState !== c.state
+					? c._nextState : c.__s!==c.state
+						? c.__s : c.state;
+
+				rendered = c.render(c.props, c.state, c.context);
+			}
+
+			if (c.getChildContext) {
+				context = assign(assign({}, context), c.getChildContext());
 			}
 
 			return renderToJSON(rendered, context, opts, opts.shallowHighOrder!==false);
 		}
 	}
 
-	let pieces = [];
-	let len = children && children.length;
-	for (let i=0; i<len; i++) {
-		let child = children[i];
-		if (!falsey(child)) {
-			let ret = renderToJSON(child, context, opts, true);
-			if (ret) pieces.push(ret);
-		}
-	}
+	let children = [];
+	getChildren(children, props.children);
+
+	const truthyChildren = children.filter(child => !falsey(child));
+	const pieces = flatMap(truthyChildren, child => (renderToJSON(child, context, opts, true) || []));
 
 	let ret = {
 		$$typeof: Symbol.for('react.test.json'),
 		type: nodeName
 	};
 
-	if (attributes) {
-		ret.props = omit(attributes, ['key', 'children', 'className']);
+	if (props) {
+		ret.props = omit(props, ['key', 'children', 'className']);
 
-		if (attributes.className && !attributes.class) {
-			ret.props.class = attributes.className;
+		if (props.className && !props.class) {
+			ret.props.class = props.className;
 		}
 	}
 
-	if (attributes && attributes.key) {
-		ret.key = attributes.key;
+	if (props && props.key) {
+		ret.key = props.key;
 	}
 
 	if (pieces.length) {
@@ -113,14 +163,12 @@ export default function renderToJSON(vnode, context, opts, inner) {
 }
 
 function getComponentName(component) {
-	let proto = component.prototype,
-		ctor = proto && proto.constructor;
-	return component.displayName || component.name || (proto && (proto.displayName || proto.name)) || getFallbackComponentName(component);
+	return component.displayName || component!==Function && component.name || getFallbackComponentName(component);
 }
 
 function getFallbackComponentName(component) {
 	let str = Function.prototype.toString.call(component),
-		name = (str.match(/^\s*function\s+([^\( ]+)/) || EMPTY)[1];
+		name = (str.match(/^\s*function\s+([^( ]+)/) || '')[1];
 	if (!name) {
 		// search for an existing indexed name for the given component:
 		let index = -1;
@@ -138,11 +186,3 @@ function getFallbackComponentName(component) {
 	}
 	return name;
 }
-renderToJSON.shallowRender = shallowRender;
-
-
-export {
-	renderToJSON as render,
-	renderToJSON,
-	shallowRender
-};
